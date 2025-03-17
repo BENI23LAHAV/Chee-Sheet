@@ -18,9 +18,11 @@ const l: unknown = "some";
 let m: any = "some";
 m = { name: "name" };
 m = () => {};
-const n: never = (() => {
-  throw new Error("some");
-})(); //never type is used for case when yo ugetting situation that will never happen
+namespace neverSituation {
+  export const n: never = (() => {
+    throw new Error("some");
+  })(); //never type is used for case when yo ugetting situation that will never happen
+}
 
 type UserKeys = keyof User; // "name" | "age" | "role" | "email"
 type UserRole = User["role"]; // Role Enum
@@ -122,30 +124,61 @@ type IsString<T> = T extends string ? "Yes" : "No";
 type Test = IsString<number>; // Will return No
 
 /**----------Decorators---------- */
-function Logger(contractor: Function): void {
-  console.log(contractor);
-}
+
+function ClassDecorator(constructor: Function) {
+  console.log("5: Class Decorator ", constructor.name);
+} //Class Decorator , applied to class
+
+function PropertyDecorator(target: any, propertyKey: string) {
+  console.log("1: Property Decorator:", propertyKey);
+} //Property Decorator , applied to property
+
 function MethodDecorator(
   target: any,
   propertyKey: string,
   descriptor: PropertyDescriptor
 ) {
-  console.log(" Method Decorator: ", propertyKey, descriptor.value);
-}
+  console.log("3: Method Decorator:", propertyKey);
+  const original = descriptor.value;
+  descriptor.value = function (...args: any[]) {
+    console.log(`Im ${propertyKey}`);
+    return original.apply(this, args);
+  };
+} //Method Decorator , applied to method
+
+function ParameterDecorator(
+  target: any,
+  propertyKey: string,
+  parameterIndex: number
+) {
+  console.log("2:  Parameter Decorator:", propertyKey, parameterIndex);
+} //Parameter Decorator , applied to parameter
+
+function AccessDecorator(
+  target: any,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+) {
+  console.log("4: Access Decorator:", propertyKey);
+} //Access Decorator , applied to access
 /**----------Abstract Classes---------- */
-@Logger
+@ClassDecorator
 abstract class JWT {
   protected constructor(protected jwt: string) {}
 }
 /**----------Classes---------- */
-@Logger
+@ClassDecorator
 class JWToken extends JWT {
   constructor(public user: User, private secretKey: string) {
     super(JSON.stringify(user) + secretKey);
   }
   @MethodDecorator
+  @AccessDecorator
   getJWT(): string {
     return this.jwt;
+  }
+  setJWT(@ParameterDecorator jwt: string) {
+    this.jwt = jwt;
   }
 }
 /**----------Namespaces---------- */
